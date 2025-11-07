@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Gestión de Pedidos - Zapacciano</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-light">
+    
+    <!-- Barra de Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Zapacciano (Mozo)</a>
+            <form th:action="@{/logout}" method="post" class="d-flex">
+                <button class="btn btn-outline-danger" type="submit">Cerrar Sesión</button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Contenido de la Página -->
+    <form th:action="@{/pedidos}" method="post">
+        <div class="container mt-4">
+            
+            <!-- ¡¡ALERTAS DE ÉXITO O ERROR!! -->
+            <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong th:text="${mensajeExito}"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            
+            <div th:if="${mensajeError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong th:text="${mensajeError}"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+
+            <div class="row g-4">
+                <!-- COLUMNA IZQUIERDA: Formulario -->
+                <div class="col-md-7">
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h4 class="mb-0">Registrar Nuevo Pedido</h4>
+                        </div>
+                        <div class="card-body">
+                            
+                            <!-- ¡¡ESTE ES EL <select> DE MESAS QUE NO TE APARECÍA!! -->
+                            <div class="mb-3">
+                                <label for="mesa" class="form-label">Número de Mesa:</label>
+                                <select class="form-select" id="mesa" name="mesa" required>
+                                    <option value="" selected disabled>-- Seleccione una Mesa --</option>
+                                    
+                                    <!-- Aquí Thymeleaf debe crear las opciones -->
+                                    <th:block th:each="mesa : ${mesasDisponibles}">
+                                        <option th:value="${mesa.numero}" 
+                                                th:text="|Mesa ${mesa.numero} (Capacidad: ${mesa.capacidad})|">
+                                        </option>
+                                    </th:block>
+                                    
+                                </select>
+                            </div>
+                            <!-- ¡¡FIN DEL <select> DE MESAS!! -->
+
+                            <hr>
+
+                            <!-- Campo 2: Items del Pedido (Dinámico) -->
+                            <h5 class="mb-3">Items del Pedido</h5>
+                            
+                            <div id="items-container">
+                                <!-- Esta es la "fila de plantilla" -->
+                                <div class="row g-2 mb-2 item-row">
+                                    <div class="col-6">
+                                        <!-- ¡¡ESTE ES EL <select> DE PRODUCTOS!! -->
+                                        <select class="form-select" name="productoId" required>
+                                            <option value="" selected disabled>-- Seleccione un Producto --</option>
+                                            <!-- Aquí Thymeleaf debe crear las opciones -->
+                                            <th:block th:each="prod : ${productosDisponibles}">
+                                                <option th:value="${prod.id}" 
+                                                        th:text="|${prod.nombre} ($${#numbers.formatDecimal(prod.precio, 0, 'POINT', 2, 'COMMA')})|">
+                                                </option>
+                                            </th:block>
+                                        </select>
+                                        <!-- ¡¡FIN DEL <select> DE PRODUCTOS!! -->
+                                    </div>
+                                    <div class="col-3">
+                                        <input type="number" class="form-control" name="cantidad" value="1" min="1" required>
+                                    </div>
+                                    <div class="col-3">
+                                        <button type="button" class="btn btn-sm btn-danger w-100 remove-item-btn">
+                                            <i class="bi bi-trash"></i> Quitar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="button" id="add-item-btn" class="btn btn-outline-primary mt-2">
+                                <i class="bi bi-plus-lg"></i> Agregar Producto
+                            </button>
+
+                        </div>
+                        
+                        <div class="card-footer text-end">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                Enviar Pedido
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA: Pedidos Activos (Esto sigue igual) -->
+                <div class="col-md-5">
+                    <div class="card shadow-sm">
+                         <div class="card-header">
+                             <h5 class="mb-0">Pedidos en Curso</h5>
+                         </div>
+                         <div class="card-body">
+                             <p>Aquí puedes mostrar una lista de los pedidos que ya están cargados.</p>
+                             <!-- (el resto del contenido de ejemplo...) -->
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Script de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SCRIPT DE JAVASCRIPT para el botón "Agregar" -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            const addItemButton = document.getElementById("add-item-btn");
+            const itemsContainer = document.getElementById("items-container");
+            const itemTemplate = document.querySelector(".item-row");
+
+            function addNewItem() {
+                const newItemRow = itemTemplate.cloneNode(true);
+                newItemRow.querySelector("select").selectedIndex = 0;
+                newItemRow.querySelector("input").value = "1";
+                itemsContainer.appendChild(newItemRow);
+            }
+
+            function removeItem(event) {
+                const rowToRemove = event.target.closest(".item-row");
+                const totalRows = itemsContainer.querySelectorAll(".item-row").length;
+                
+                if (totalRows > 1) {
+                    rowToRemove.remove();
+                } else {
+                    alert("¡Debes tener al menos un item en el pedido!");
+                }
+            }
+
+            addItemButton.addEventListener("click", addNewItem);
+
+            itemsContainer.addEventListener("click", function(event) {
+                if (event.target && event.target.closest(".remove-item-btn")) {
+                    removeItem(event);
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

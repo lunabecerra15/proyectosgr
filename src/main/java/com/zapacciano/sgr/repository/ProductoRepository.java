@@ -1,0 +1,13 @@
+package com.zapacciano.sgr.repository;
+
+import com.zapacciano.sgr.model.Producto;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ProductoRepository extends JpaRepository<Producto, Long> {
+    // Con esto ya tenemos .findById(), .findAll(), .save(), etc.
+    // No necesitamos más por ahora.
+}
+
+
