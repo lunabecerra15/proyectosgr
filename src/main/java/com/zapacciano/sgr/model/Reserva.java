@@ -13,45 +13,95 @@ public class Reserva {
 
     private LocalDateTime fechaHora;
     private int cantidadPersonas;
-    private double montoSeña; // Ej: 3 personas * 10000 = 30000
+    private double montoSeña;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private EstadoReserva estado;
+
+    // --- Relaciones ---
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente")
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_mesa", nullable = true) // Puede ser null al inicio
+    @JoinColumn(name = "id_mesa")
     private Mesa mesa;
 
-    // --- ¡¡AQUÍ ESTÁ EL ARREGLO!! ---
-    // Antes decía: mappedBy = "reservaAplicada"
-    // Ahora dice: mappedBy = "reserva" (¡el nombre real del campo en Pedido.java!)
-    @OneToOne(mappedBy = "reserva", fetch = FetchType.LAZY)
+    // --- ¡¡ESTE ES EL ARREGLO DEL 'AnnotationException'!! ---
+    // 'mappedBy = "reserva"' le dice a Hibernate:
+    // "No crees una columna 'pedido_id' aquí. Ve al campo 'reserva'
+    // en la clase 'Pedido' para encontrar la configuración de esta unión."
+    @OneToOne(mappedBy = "reserva", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Pedido pedido;
-    // --- FIN DEL ARREGLO ---
-
 
     // --- Constructores, Getters y Setters ---
-    public Reserva() {}
 
-    // (Getters y Setters para todos los campos...)
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public LocalDateTime getFechaHora() { return fechaHora; }
-    public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
-    public int getCantidadPersonas() { return cantidadPersonas; }
-    public void setCantidadPersonas(int cantidadPersonas) { this.cantidadPersonas = cantidadPersonas; }
-    public double getMontoSeña() { return montoSeña; }
-    public void setMontoSeña(double montoSeña) { this.montoSeña = montoSeña; }
-    public EstadoReserva getEstado() { return estado; }
-    public void setEstado(EstadoReserva estado) { this.estado = estado; }
-    public Cliente getCliente() { return cliente; }
-    public void setCliente(Cliente cliente) { this.cliente = cliente; }
-    public Mesa getMesa() { return mesa; }
-    public void setMesa(Mesa mesa) { this.mesa = mesa; }
-    public Pedido getPedido() { return pedido; }
-    public void setPedido(Pedido pedido) { this.pedido = pedido; }
+    public Reserva() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getFechaHora() {
+        return fechaHora;
+    }
+
+    public void setFechaHora(LocalDateTime fechaHora) {
+        this.fechaHora = fechaHora;
+    }
+
+    public int getCantidadPersonas() {
+        return cantidadPersonas;
+    }
+
+    public void setCantidadPersonas(int cantidadPersonas) {
+        this.cantidadPersonas = cantidadPersonas;
+    }
+
+    public double getMontoSeña() {
+        return montoSeña;
+    }
+
+    public void setMontoSeña(double montoSeña) {
+        this.montoSeña = montoSeña;
+    }
+
+    public EstadoReserva getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoReserva estado) {
+        this.estado = estado;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    public Mesa getMesa() {
+        return mesa;
+    }
+
+    public void setMesa(Mesa mesa) {
+        this.mesa = mesa;
+    }
+
+    public Pedido getPedido() {
+        return pedido;
+    }
+
+    public void setPedido(Pedido pedido) {
+        this.pedido = pedido;
+    }
 }

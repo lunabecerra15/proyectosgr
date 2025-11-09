@@ -1,13 +1,9 @@
 package com.zapacciano.sgr.controller;
 
-import com.zapacciano.sgr.model.Cliente;
-import com.zapacciano.sgr.model.EstadoReserva;
-import com.zapacciano.sgr.model.Mesa; 
-import com.zapacciano.sgr.model.Pedido;
-import com.zapacciano.sgr.model.Producto; 
-import com.zapacciano.sgr.model.Reserva;
+import com.zapacciano.sgr.model.*;
 import com.zapacciano.sgr.repository.MesaRepository; 
 import com.zapacciano.sgr.repository.ProductoRepository; 
+import com.zapacciano.sgr.repository.UsuarioRepository;
 import com.zapacciano.sgr.service.PdfService;
 import com.zapacciano.sgr.service.PedidoService;
 import com.zapacciano.sgr.service.ReservaService;
@@ -26,9 +22,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.format.annotation.DateTimeFormat; 
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime; 
 import java.util.List;
+import java.util.Collection;
 
 @Controller
 public class WebController {
@@ -48,6 +46,9 @@ public class WebController {
     @Autowired
     private ReservaService reservaService;
     
+    // La necesitamos para encontrar al Mozo logueado
+    @Autowired
+    private UsuarioRepository usuarioRepository;
     
     // --- PÁGINAS PÚBLICAS / LOGIN ---
 
@@ -90,26 +91,43 @@ public class WebController {
 
     @GetMapping("/pedidos")
     public String mostrarPaginaDePedidos(
-            Model model, 
+           Model model, 
+            @AuthenticationPrincipal UserDetails userDetails, // <-- Para saber QUIÉN es el mozo
             @RequestParam(value = "exito", required = false) String exito,
-            @RequestParam(value = "error", required = false) String error
+            @RequestParam(value = "error", required = false) String error,
+            @RequestParam(value = "cobroExito", required = false) String cobroExito 
     ) {
         
+        // 1. Encontrar al Mozo logueado
+        Usuario mozo = usuarioRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Mozo no encontrado"));
+
+        // 2. Buscar los pedidos PENDIENTES solo de ESE mozo
+        List<Pedido> pedidosActivosMozo = pedidoService.getPedidosActivosPorMozo(mozo);
+        model.addAttribute("pedidosActivos", pedidosActivosMozo);
+
+        // 3. Buscar mesas LIBRES para el formulario
+        List<Mesa> mesasLibres = mesaRepository.findByEstado(EstadoMesa.LIBRE);
+        model.addAttribute("mesasDisponibles", mesasLibres);
+
+        // 4. Buscar todos los productos para el formulario
         List<Producto> productos = productoRepository.findAll();
-        List<Mesa> mesas = mesaRepository.findAll(); // <-- Busca las mesas
-        
         model.addAttribute("productosDisponibles", productos);
-        model.addAttribute("mesasDisponibles", mesas); // <-- Las pasa al HTML
+
+        // --- ¡¡LÍNEA DE ARREGLO!! ---
+        // Pasamos el nombre del mozo al HTML de forma segura.
+        model.addAttribute("nombreMozo", mozo.getNombre());
         
+        // 5. Manejar los mensajes de feedback
         if (exito != null) {
             model.addAttribute("mensajeExito", "¡Pedido registrado correctamente!");
         }
+        if (cobroExito != null) {
+            model.addAttribute("mensajeExito", "¡Pedido Cobrado! La mesa ha sido liberada.");
+        }
         if (error != null) {
-            if (error.equals("vacio")) {
-                model.addAttribute("mensajeError", "Error: El pedido no puede estar vacío.");
-            } else {
-                model.addAttribute("mensajeError", "Error: No se pudo registrar el pedido. Verifique la mesa o los productos.");
-            }
+            // ... (lógica de mensajes de error que ya tenías) ...
+            model.addAttribute("mensajeError", "Error: No se pudo registrar el pedido.");
         }
         
         return "pedidos"; 
@@ -148,6 +166,31 @@ public class WebController {
         }
     }
 
+
+    // --- ¡¡NUEVO ENDPOINT PARA EL BOTÓN 'COBRAR'!! ---
+    
+    /**
+     * Procesa la acción de "Cobrar" un pedido.
+     * Cambia el estado del Pedido a COMPLETADO y libera la Mesa.
+     */
+    @PostMapping("/pedidos/cobrar/{id}")
+    public String cobrarPedido(
+            @PathVariable("id") Long pedidoId, 
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            pedidoService.cobrarPedido(pedidoId);
+            // Enviamos un mensaje de éxito
+            redirectAttributes.addAttribute("cobroExito", "true");
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Enviamos un mensaje de error
+            redirectAttributes.addAttribute("error", "Error al cobrar el pedido.");
+        }
+        
+        // Siempre redirigimos de vuelta a la página de pedidos
+        return "redirect:/pedidos";
+    }
     
     // --- VISTAS CLIENTE (/reservas) ---
     // (Esto ya funciona, no se toca)

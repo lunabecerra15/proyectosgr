@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +26,7 @@ public class PedidoService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    // ... (El método registrarPedido(...) ya está perfecto y no cambia) ...
     @Transactional
     public Pedido registrarPedido(int numeroMesa, long[] productoIds, int[] cantidades, UserDetails userDetails) {
         
@@ -34,20 +36,18 @@ public class PedidoService {
         Mesa mesa = mesaRepository.findByNumero(numeroMesa)
                 .orElseThrow(() -> new RuntimeException("Mesa no encontrada con número: " + numeroMesa));
 
-        // --- ¡¡AQUÍ ESTÁ EL ARREGLO!! ---
-        
-        // 1. Crear y GUARDAR el Pedido (Padre) PRIMERO
+        // 1. Guardar el Pedido "Padre" PRIMERO para obtener un ID
         Pedido pedido = new Pedido();
         pedido.setFecha(LocalDateTime.now());
         pedido.setMesa(mesa);
         pedido.setUsuario(mozo);
-        pedido.setEstado(EstadoPedido.PENDIENTE);
+        pedido.setEstado(EstadoPedido.PENDIENTE); // ¡Correcto!
         pedido.setTotal(0); // Total temporal
         
-        // ¡Lo guardamos ANTES del bucle para que tenga un ID!
+        // ¡¡AQUÍ!! Guardamos el pedido ANTES de los items
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
 
-        // 2. Ahora creamos los "hijos" (Items)
+        // 4. Calcular el total y crear los items
         double totalPedido = 0;
         
         for (int i = 0; i < productoIds.length; i++) {
@@ -61,32 +61,79 @@ public class PedidoService {
             totalPedido += subtotal;
 
             ItemPedido item = new ItemPedido();
-            
-            // ¡Le asignamos el Pedido que YA TIENE ID!
-            item.setPedido(pedidoGuardado); 
+            item.setPedido(pedidoGuardado); // ¡¡Usamos el pedido que SÍ tiene ID!!
             item.setProducto(producto);
             item.setCantidad(cant);
             item.setPrecioUnitario(producto.getPrecio());
             
-             itemPedidoRepository.save(item); // Ahora esto funciona
+            itemPedidoRepository.save(item);
         }
 
-        // 3. Actualizamos el Pedido "Padre" con el total final
+        // 5. Actualizar el pedido principal (que ya existe) con el total final
         pedidoGuardado.setTotal(totalPedido);
-        pedidoRepository.save(pedidoGuardado); // Guardamos la actualización
+        pedidoRepository.save(pedidoGuardado); // Es un 'update'
 
-        // 4. Actualizar el estado de la mesa
-        mesa.setEstado(EstadoMesa.OCUPADO);
+        // 6. Actualizar el estado de la mesa
+        mesa.setEstado(EstadoMesa.OCUPADO); // ¡Correcto!
         mesaRepository.save(mesa);
 
         return pedidoGuardado;
     }
 
-    public List<Pedido> getReporteVentas() {
-        return pedidoRepository.findByEstadoWithDetails(EstadoPedido.COMPLETADO);
+
+    // --- ¡¡MÉTODO NUEVO!! ---
+    /**
+     * Busca los pedidos PENDIENTES (activos) de un Mozo específico.
+     */
+    @Transactional(readOnly = true)
+    public List<Pedido> getPedidosActivosPorMozo(Usuario mozo) {
+        // Usamos el nuevo método del repositorio
+        return pedidoRepository.findByEstadoAndUsuario(EstadoPedido.PENDIENTE, mozo);
     }
     
+    // --- ¡¡MÉTODO NUEVO!! ---
+    /**
+     * Cambia un pedido de PENDIENTE a COMPLETADO y libera la mesa.
+     */
+    @Transactional
+    public void cobrarPedido(Long pedidoId) {
+        // 1. Encontrar el pedido
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado: " + pedidoId));
+        
+        // 2. Cambiar su estado
+        pedido.setEstado(EstadoPedido.COMPLETADO);
+        pedidoRepository.save(pedido);
+        
+        // 3. Encontrar y liberar la mesa
+        Mesa mesa = pedido.getMesa();
+        if (mesa != null) {
+            mesa.setEstado(EstadoMesa.LIBRE);
+            mesaRepository.save(mesa);
+        }
+        // (Aquí podríamos verificar si la mesa tiene OTRAS reservas pendientes,
+        // pero por ahora la liberamos)
+    }
+
+
+    // --- ¡¡LÓGICA ACTUALIZADA!! ---
+    /**
+     * Obtiene los pedidos PENDIENTES para el panel del Admin.
+     * SEGÚN TU NUEVA LÓGICA, EL ADMIN YA NO VE ESTO.
+     * Devolvemos una lista vacía para no romper el WebController (lo limpiaremos después).
+     */
     public List<Pedido> getPedidosActivos() {
-        return pedidoRepository.findByEstadoWithDetails(EstadoPedido.PENDIENTE);
+        // El Admin ya no maneja pedidos activos.
+        return Collections.emptyList();
+        
+        // --- OJO: Arreglaremos el WebController en el Paso 3 ---
+    }
+
+    /**
+     * Obtiene los pedidos COMPLETADOS para el reporte de ventas del Admin.
+     * (Este ya estaba bien)
+     */
+    public List<Pedido> getReporteVentas() {
+        return pedidoRepository.findByEstadoWithDetails(EstadoPedido.COMPLETADO);
     }
 }
