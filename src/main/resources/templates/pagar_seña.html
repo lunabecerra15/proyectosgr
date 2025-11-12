@@ -44,11 +44,17 @@
                             Esto es una simulación de pago. La seña se descontará de tu cuenta final en el restaurante.
                         </p>
                         
-                        <!-- El formulario que simula el pago -->
-                        <form th:action="@{/reservas/pagar/{id}(id=${reserva.id})}" method="post">
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-success btn-lg">
-                                    Confirmar Pago Simulado
+                        <!-- Formulario que redirige a la página de ingreso de tarjeta -->
+                        <!-- Enviar por GET a /tarjeta con reservaId como parámetro -->
+                        <form th:action="@{/tarjeta}" method="get">
+                            <!-- enviamos el id de la reserva como reservaId para que tarjeta.html lo reciba -->
+                            <input type="hidden" name="reservaId" th:value="${reserva.id}" />
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-secondary" onclick="window.history.back();">
+                                    <i class="bi bi-arrow-left"></i> Volver
+                                </button>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-credit-card"></i> Pagar con Tarjeta
                                 </button>
                             </div>
                         </form>

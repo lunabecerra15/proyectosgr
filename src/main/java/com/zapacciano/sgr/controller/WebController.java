@@ -249,4 +249,23 @@ public class WebController {
         model.addAttribute("reservaId", id);
         return "reserva_exitosa"; 
     }
+
+    /**
+     * Mostrar la pantalla de ingreso de datos de tarjeta.
+     * Si se recibe reservaId como parámetro, lo carga y lo añade al modelo
+     * para que `tarjeta.html` pueda mostrar información de la reserva.
+     */
+    @GetMapping("/tarjeta")
+    public String mostrarPaginaTarjeta(@RequestParam(value = "reservaId", required = false) Long reservaId, Model model) {
+        if (reservaId != null) {
+            try {
+                Reserva reserva = reservaService.findById(reservaId);
+                model.addAttribute("reserva", reserva);
+            } catch (Exception e) {
+                // Si no se encuentra, simplemente no agregamos la reserva al modelo
+                // y dejamos que la vista maneje la ausencia de datos.
+            }
+        }
+        return "tarjeta";
+    }
 }

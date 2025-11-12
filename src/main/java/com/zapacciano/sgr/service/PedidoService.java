@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -123,10 +122,8 @@ public class PedidoService {
      * Devolvemos una lista vacía para no romper el WebController (lo limpiaremos después).
      */
     public List<Pedido> getPedidosActivos() {
-        // El Admin ya no maneja pedidos activos.
-        return Collections.emptyList();
-        
-        // --- OJO: Arreglaremos el WebController en el Paso 3 ---
+        // Devolver los pedidos PENDIENTES con sus detalles para que el admin los vea.
+        return pedidoRepository.findByEstadoWithDetails(EstadoPedido.PENDIENTE);
     }
 
     /**

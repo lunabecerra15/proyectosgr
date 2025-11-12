@@ -49,7 +49,7 @@ public class SecurityConfig {
                 // --- PÁGINAS PÚBLICAS / DE CLIENTES ---
                 // ¡¡ESTA REGLA ARREGLA TODO EL FLUJO DE RESERVAS!!
                 // Permite todo lo que empiece con /reservas/ y también el /
-                .requestMatchers("/", "/reservas/**", "/css/**", "/js/**", "/api/mesas/**").permitAll()
+                .requestMatchers("/", "/reservas/**", "/css/**", "/js/**", "/api/mesas/**", "/tarjeta", "/tarjeta/**").permitAll()
                 
                 // --- PÁGINAS PROTEGIDAS POR ROL ---
                 .requestMatchers("/home/**").hasRole("ADMIN")
