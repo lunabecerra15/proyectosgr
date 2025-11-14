@@ -54,7 +54,7 @@
                         
                         <!-- Campo 1: Número de Mesa (¡Ahora es un Dropdown!) -->
                         <div class="mb-3">
-                            <label for="mesa" class="form-label">Número de Mesa (Solo mesas LIBRES):</label>
+                            <label for="mesa" class="form-label">Número de Mesa:</label>
                             <select class="form-select" id="mesa" name="mesa" required>
                                 <option value="" selected disabled>-- Seleccione una Mesa --</option>
                                 <th:block th:each="m : ${mesasDisponibles}">
@@ -68,7 +68,7 @@
                         <hr>
 
                         <!-- Campo 2: Items del Pedido (Dinámico) -->
-                        <h5 class="mb-3">Items del Pedido</h5>
+                        <h5 class="mb-3">Pedido</h5>
                         <div id="items-container">
                             <!-- Fila de plantilla para clonar con JS -->
                             <div class="row g-2 mb-2 item-row">
@@ -144,7 +144,7 @@
                                     
                                     <form th:action="@{/pedidos/cobrar/{id}(id=${pedido.id})}" method="post">
                                         <button type="submit" class="btn btn-sm btn-primary">
-                                            <i class="bi bi-cash-coin"></i> Cobrar y Liberar
+                                            <i class="bi bi-cash-coin"></i> Cobrar
                                         </button>
                                     </form>
                                 </div>

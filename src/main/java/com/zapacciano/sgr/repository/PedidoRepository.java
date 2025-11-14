@@ -30,4 +30,13 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
            "WHERE p.estado = :estado AND p.usuario = :usuario")
     List<Pedido> findByEstadoAndUsuario(@Param("estado") EstadoPedido estado, @Param("usuario") Usuario usuario);
     
+    // --- ¡¡MÉTODO NUEVO PARA REPORTE!! ---
+    // Busca pedidos COMPLETADOS que AÚN NO han sido reportados/impresos.
+    @Query("SELECT DISTINCT p FROM Pedido p " +
+           "JOIN FETCH p.mesa " +
+           "JOIN FETCH p.usuario " +
+           "LEFT JOIN FETCH p.items i " +
+           "LEFT JOIN FETCH i.producto " +
+           "WHERE p.estado = :estado AND p.reporteGenerado = false")
+    List<Pedido> findByEstadoAndReporteGeneradoFalse(@Param("estado") EstadoPedido estado);
 }

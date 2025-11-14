@@ -41,27 +41,35 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         
         http
-            // ¡¡ESTA LÍNEA ES CRUCIAL!!
-            // Desactiva CSRF, lo que arregla el "Confirmar Pago Simulado"
-            .csrf(csrf -> csrf.disable())
+            // Deshabilitamos CSRF para que funcionen los POST (como el de pago)
+            .csrf(csrf -> csrf.disable()) 
             
             .authorizeHttpRequests(authz -> authz
-                // --- PÁGINAS PÚBLICAS / DE CLIENTES ---
-                // ¡¡ESTA REGLA ARREGLA TODO EL FLUJO DE RESERVAS!!
-                // Permite todo lo que empiece con /reservas/ y también el /
-                .requestMatchers("/", "/reservas/**", "/css/**", "/js/**", "/api/mesas/**", "/tarjeta", "/tarjeta/**").permitAll()
                 
-                // --- PÁGINAS PROTEGIDAS POR ROL ---
-                .requestMatchers("/home/**").hasRole("ADMIN")
+                // --- PÁGINAS PÚBLICAS (Cliente) ---
+                .requestMatchers(
+                        "/", 
+                        "/menu", 
+                        "/reservas", 
+                        "/reservas/pagar/**", 
+                        "/tarjeta",
+                        "/reservas/exito/**",
+                        "/css/**", "/js/**", "/api/mesas/**" // (Recursos estáticos y API pública)
+                ).permitAll()
+                
+                // --- PÁGINAS DE ADMIN ---
+                // ¡¡AQUÍ ESTÁ EL CAMBIO!!
+                // Agregamos "/admin/**" a las rutas protegidas del Admin.
+                .requestMatchers("/home/**", "/admin/**").hasRole("ADMIN") 
+                
+                // --- PÁGINAS DE MOZO ---
                 .requestMatchers("/pedidos/**").hasRole("MOZO")
                 
-                // --- TODO LO DEMÁS ---
-                // Cualquier otra página (que no hayamos listado)
-                // requiere que el usuario esté, al menos, logueado.
-                .anyRequest().authenticated()
+                // Todo lo demás requiere estar logueado
+                .anyRequest().authenticated() 
             )
             .formLogin(form -> form
-                .loginPage("/login")
+                .loginPage("/login") 
                 .loginProcessingUrl("/login")
                 .successHandler(customAuthenticationSuccessHandler) // <-- Usar el recepcionista
                 .failureUrl("/login?error=true")

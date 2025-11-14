@@ -10,30 +10,34 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
     private String nombre;
-
     private String descripcion;
-
-    @Column(nullable = false)
     private double precio;
+    private int stock;
 
-    private int stock; // Opcional, para control de inventario
+    // --- ¡¡CAMBIO AQUÍ!! ---
+    // Agregamos el nuevo campo para agrupar el menú
+    private String categoria;
+    // --- FIN DEL CAMBIO ---
 
-    // --- Constructores ---
+    // Constructor vacío para JPA
     public Producto() {
     }
 
-    public Producto(String nombre, String descripcion, double precio, int stock) {
+    // --- ¡¡CAMBIO AQUÍ!! ---
+    // Actualizamos el constructor para que también incluya la categoría
+    public Producto(String nombre, String descripcion, double precio, int stock, String categoria) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
         this.stock = stock;
+        this.categoria = categoria; // Asignamos la categoría
     }
+    // --- FIN DEL CAMBIO ---
 
     // --- Getters y Setters ---
-    // ¡Importante! Asegúrate de que los getters/setters usen CamelCase
-    
+    // (Asegúrate de agregar el getter y setter para 'categoria')
+
     public Long getId() {
         return id;
     }
@@ -73,4 +77,15 @@ public class Producto {
     public void setStock(int stock) {
         this.stock = stock;
     }
+
+    // --- ¡¡CAMBIO AQUÍ!! ---
+    // Nuevo Getter y Setter
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
+    }
+    // --- FIN DEL CAMBIO ---
 }

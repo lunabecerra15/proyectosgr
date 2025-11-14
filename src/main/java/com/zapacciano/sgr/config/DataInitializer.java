@@ -86,30 +86,36 @@ public class DataInitializer implements CommandLineRunner {
         
         // --- 3. Cargar Productos (Esto ya estaba bien) ---
         if (productoRepository.count() == 0) {
+            // BEBIDAS
+            productoRepository.save(new Producto("Agua mineral 500ml", "Agua sin gas", 3000.00, 100, "Bebidas"));
+            productoRepository.save(new Producto("Lata cerveza 500ml", "Cerveza rubia, roja o negra", 5000.00, 100, "Bebidas"));
+            productoRepository.save(new Producto("Bebida Gaseosa 350ml", "Línea Coca-Cola (Regular o Zero)", 3500.00, 100, "Bebidas"));
+            productoRepository.save(new Producto("Agua saborizada 500ml", "Sabores varios", 3000.00, 100, "Bebidas"));
             
-            // Bebidas
-            productoRepository.save(new Producto("Agua mineral 500ml", "Bebida", 3000.00, 100)); // ID 1
-            productoRepository.save(new Producto("Lata cerveza 500ml", "Bebida", 5000.00, 100)); // ID 2
-            // ... (el resto de los 19 productos) ...
-            productoRepository.save(new Producto("Bebida Gaseosa-linea coca cola 350ml", "Bebida", 3500.00, 100));
-            productoRepository.save(new Producto("Agua saborizada 500ml", "Bebida", 3000.00, 100));
-            productoRepository.save(new Producto("Hamburguesa Zapacciano", "Doble cheddar, panceta, cebolla crispy, papas", 20000.00, 100));
-            productoRepository.save(new Producto("Hamburguesa Completa", "Simple, lechuga, tomate, huevo frito, papas", 15000.00, 100));
-            productoRepository.save(new Producto("Hamburguesa kids", "Mini simple, cheddar, papas", 10000.00, 100));
-            productoRepository.save(new Producto("Pizza Mozzarella", "Salsa, mozzarella, aceitunas", 14000.00, 100));
-            productoRepository.save(new Producto("Pizza Napolitana", "Mozzarella, tomate, ajo, aceitunas", 16000.00, 100));
-            productoRepository.save(new Producto("Pizza con Jamón y morrón", "Mozzarella, jamón, morrón, aceitunas", 16000.00, 100));
-            productoRepository.save(new Producto("Pizza con Jamón Crudo y Rucula", "Mozzarella, crudo, rúcula, parmesano", 20000.00, 100));
-            productoRepository.save(new Producto("Pizza Cuatro Quesos", "Mozzarella, provolone, roquefort, parmesano", 22000.00, 100));
-            productoRepository.save(new Producto("Smoke Salmon Pasta", "Lingüini, crema, salmón ahumado, morrones, eneldo", 27000.00, 100));
-            productoRepository.save(new Producto("Chicken Thai Pasta", "Penne, vegetales, pollo, salsa Thai, soja, jengibre", 23000.00, 100));
-            productoRepository.save(new Producto("Arizona Pasta", "Penne, salsa Alfredo, pollo, morrones, especias", 22000.00, 100));
-            productoRepository.save(new Producto("Key Lime Pie", "Porción de torta de lima", 10000.00, 100));
-            productoRepository.save(new Producto("Volcan de chocolate", "Volcán con bocha de helado", 10000.00, 100));
-            productoRepository.save(new Producto("Brownie Sundae", "Brownie tibio con helado y salsa", 11500.00, 100));
-            productoRepository.save(new Producto("Zapacciano's cheesecake", "Cheesecake de frutos rojos", 13000.00, 100));
+            // HAMBURGUESAS
+            productoRepository.save(new Producto("Hamburguesa Zapacciano", "Doble con cheddar, panceta, cebolla crispy. Incluye papas fritas.", 20000.00, 100, "Hamburguesas"));
+            productoRepository.save(new Producto("Hamburguesa Completa", "Simple con lechuga, tomate, y huevo frito. Incluye papas fritas.", 15000.00, 100, "Hamburguesas"));
+            productoRepository.save(new Producto("Hamburguesa Kids", "Mini simple con cheddar. Incluye papas fritas.", 10000.00, 100, "Hamburguesas"));
 
-            System.out.println("¡¡Productos (menú) de prueba creados!! (19 productos)");
+            // PIZZAS
+            productoRepository.save(new Producto("Pizza Mozzarella", "Salsa de tomate, mozzarella y orégano.", 14000.00, 100, "Pizzas"));
+            productoRepository.save(new Producto("Pizza Napolitana", "Mozzarella, tomate fresco en rodajas y ajo.", 16000.00, 100, "Pizzas"));
+            productoRepository.save(new Producto("Pizza con Jamón y Morrón", "Mozzarella, jamón cocido y morrones asados.", 16000.00, 100, "Pizzas"));
+            productoRepository.save(new Producto("Pizza con Jamón Crudo y Rúcula", "Mozzarella, jamón crudo, rúcula y hebras de parmesano.", 20000.00, 100, "Pizzas"));
+            productoRepository.save(new Producto("Pizza Cuatro Quesos", "Mozzarella, provolone, queso azul y parmesano.", 22000.00, 100, "Pizzas"));
+
+            // PASTAS
+            productoRepository.save(new Producto("Smoke Salmon Pasta", "Lingüini con salsa crema, salmón ahumado, morrones y eneldo.", 27000.00, 100, "Pastas"));
+            productoRepository.save(new Producto("Chicken Thai Pasta", "Penne salteado con vegetales, pollo, salsa de soja y jengibre.", 23000.00, 100, "Pastas"));
+            productoRepository.save(new Producto("Arizona Pasta", "Penne con salsa Alfredo, pollo, morrones y especias.", 22000.00, 100, "Pastas"));
+
+            // POSTRES
+            productoRepository.save(new Producto("Key Lime Pie", "Tarta de lima con base de galleta y merengue.", 10000.00, 100, "Postres"));
+            productoRepository.save(new Producto("Volcán de Chocolate", "Con bocha de helado de crema americana.", 10000.00, 100, "Postres"));
+            productoRepository.save(new Producto("Brownie Sundae", "Brownie tibio, helado, salsa de chocolate y nueces.", 11500.00, 100, "Postres"));
+            productoRepository.save(new Producto("Zapacciano's Cheesecake", "Cheesecake de frutos rojos.", 13000.00, 100, "Postres"));
+
+            System.out.println("¡¡Productos (menú) de prueba creados!! (" + productoRepository.count() + " productos)");
         }
     }
 }

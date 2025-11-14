@@ -16,14 +16,12 @@ public class Pedido {
     private LocalDateTime fecha;
     private double total;
 
-    // --- ¡¡ARREGLO PARA EL BUG 'Data truncated'!! ---
-    // Le decimos a JPA que guarde el Enum como un String ("PENDIENTE")
-    // en lugar de un número (0), lo que rompía la BD.
+    //Le decimos a JPA que guarde el Enum como un String ("PENDIENTE")
     @Enumerated(EnumType.STRING)
-    @Column(length = 20) // (Le damos espacio suficiente: 20 caracteres)
+    @Column(length = 20) //20 caracteres
     private EstadoPedido estado;
 
-    // --- Relaciones ---
+    //Relaciones
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario")
@@ -33,18 +31,20 @@ public class Pedido {
     @JoinColumn(name = "id_mesa")
     private Mesa mesa;
 
-    // --- ¡¡ESTE ES EL ARREGLO 1/2 DEL 'AnnotationException'!! ---
-    // Este es el campo 'reserva' que el 'mappedBy' de la clase Reserva
-    // estaba buscando.
+    // Este es el campo 'reserva' que el 'mappedBy' de la clase Reserva busca
     @OneToOne
     @JoinColumn(name = "id_reserva_aplicada", referencedColumnName = "id", nullable = true)
     private Reserva reserva;
 
-    // Relación con los items (esta ya estaba bien)
+    // Relación con los items
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ItemPedido> items = new ArrayList<>();
 
-    // --- Constructores, Getters y Setters ---
+    // Cierre de Caja
+    @Column(columnDefinition = "boolean default false")
+    private boolean reporteGenerado = false;
+
+    //Constructores, Getters y Setters
 
     public Pedido() {
     }
@@ -113,9 +113,16 @@ public class Pedido {
         this.items = items;
     }
 
-    // Método de ayuda (si lo necesitas)
     public void addItem(ItemPedido item) {
         items.add(item);
         item.setPedido(this);
+    }
+
+    public boolean isReporteGenerado() {
+        return reporteGenerado;
+    }
+
+    public void setReporteGenerado(boolean reporteGenerado) {
+        this.reporteGenerado = reporteGenerado;
     }
 }

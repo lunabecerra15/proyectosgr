@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PedidoService {
@@ -126,11 +125,17 @@ public class PedidoService {
         return pedidoRepository.findByEstadoWithDetails(EstadoPedido.PENDIENTE);
     }
 
-    /**
-     * Obtiene los pedidos COMPLETADOS para el reporte de ventas del Admin.
-     * (Este ya estaba bien)
-     */
+  
     public List<Pedido> getReporteVentas() {
-        return pedidoRepository.findByEstadoWithDetails(EstadoPedido.COMPLETADO);
+        // Usamos el nuevo método del repositorio que filtra por reporteGenerado = false
+        return pedidoRepository.findByEstadoAndReporteGeneradoFalse(EstadoPedido.COMPLETADO);
+    }
+
+    @Transactional
+    public void marcarVentasComoReportadas(List<Pedido> pedidos) {
+        for (Pedido p : pedidos) {
+            p.setReporteGenerado(true);
+        }
+        pedidoRepository.saveAll(pedidos);
     }
 }

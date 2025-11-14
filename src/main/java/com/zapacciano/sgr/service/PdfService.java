@@ -1,98 +1,128 @@
 package com.zapacciano.sgr.service;
 
-import com.lowagie.text.*;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import com.zapacciano.sgr.model.ItemPedido;
+import com.zapacciano.sgr.model.Pedido;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
 import java.awt.Color;
+import java.io.ByteArrayOutputStream;
+//import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
-/**
- * Servicio dedicado a crear el archivo PDF en memoria.
- */
 @Service
 public class PdfService {
 
     /**
-     * Este método crea el reporte de ventas en PDF.
-     * Por ahora, usa datos de ejemplo.
-     * Más adelante, le puedes pasar una lista de 'Ventas'
-     * desde tu base de datos.
+     * Genera un reporte en PDF basado en una lista real de pedidos completados (ventas).
+     * ¡Esta versión usa OpenPDF!
+     * @param ventas Lista de pedidos con estado COMPLETADO.
+     * @return un array de bytes (byte[]) que representa el archivo PDF.
      */
-    public byte[] generarReporteVentas() {
+    public byte[] generarReporteVentas(List<Pedido> ventas) {
         
-        // 1. Crear un 'flujo' de bytes en memoria.
-        // Aquí es donde el PDF se escribirá temporalmente.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        
-        // 2. Crear el Documento PDF
-        // El 'PageSize.A4' define el tamaño de la hoja.
-        Document document = new Document(PageSize.A4);
+        Document document = new Document(PageSize.A4); // Tamaño A4
 
         try {
-            // 3. Asociar el Documento con el 'flujo' de salida
-            PdfWriter.getInstance(document, baos);
-
-            // 4. Abrir el documento para empezar a escribir
+            PdfWriter.getInstance(document, baos); // Escribimos en memoria
             document.open();
 
-            // --- AÑADIR CONTENIDO AL PDF ---
+            // Estilos de Fuente
+            Font fontTitulo = new Font(Font.HELVETICA, 20, Font.BOLD);
+            Font fontFecha = new Font(Font.HELVETICA, 12, Font.ITALIC);
+            Font fontHeader = new Font(Font.HELVETICA, 12, Font.BOLD, Color.WHITE);
+            Font fontTotal = new Font(Font.HELVETICA, 14, Font.BOLD);
 
-            // 5. Título
-            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Color.BLACK);
+            // --- 1. TÍTULO ---
             Paragraph titulo = new Paragraph("Reporte de Ventas - Zapacciano", fontTitulo);
             titulo.setAlignment(Element.ALIGN_CENTER);
-            titulo.setSpacingAfter(20); // Espacio después del título
             document.add(titulo);
-
-            // 6. Párrafo introductorio
-            document.add(new Paragraph("Este es un resumen de las ventas generadas. (Datos de ejemplo)"));
-            document.add(Chunk.NEWLINE); // Línea en blanco
-
-            // 7. Crear la Tabla de datos
-            // Una tabla con 3 columnas
-            PdfPTable tabla = new PdfPTable(3); 
-            tabla.setWidthPercentage(100); // Que ocupe todo el ancho
             
+            Paragraph fecha = new Paragraph("Generado el: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), fontFecha);
+            fecha.setAlignment(Element.ALIGN_CENTER);
+            fecha.setSpacingAfter(20); // Espacio después de la fecha
+            document.add(fecha);
+
+            // --- 2. TABLA DE VENTAS ---
+            PdfPTable table = new PdfPTable(4); // 4 columnas
+            table.setWidthPercentage(100); // Ancho 100%
+            table.setWidths(new float[]{1f, 3f, 4f, 2f}); // Anchos de columna
+
             // Encabezados de la tabla
-            tabla.addCell("Producto");
-            tabla.addCell("Cantidad Vendida");
-            tabla.addCell("Total Recaudado");
-
-            // --- DATOS DE EJEMPLO ---
-            // (Más adelante, esto vendría de un bucle `for(Venta venta : ventas)`)
-            tabla.addCell("Pizza Margarita");
-            tabla.addCell("30");
-            tabla.addCell("$ 45000.00");
-
-            tabla.addCell("Hamburguesa Clásica");
-            tabla.addCell("50");
-            tabla.addCell("$ 60000.00");
-
-            tabla.addCell("Ensalada César");
-            tabla.addCell("20");
-            tabla.addCell("$ 28000.00");
+            table.addCell(crearCeldaHeader("ID Pedido", fontHeader));
+            table.addCell(crearCeldaHeader("Mesa / Mozo", fontHeader));
+            table.addCell(crearCeldaHeader("Items Vendidos", fontHeader));
+            table.addCell(crearCeldaHeader("Total", fontHeader));
             
-            // Total
-            tabla.addCell("TOTAL");
-            tabla.addCell("100");
-            tabla.addCell("$ 133000.00");
-            // --- FIN DATOS DE EJEMPLO ---
+            double granTotal = 0.0;
 
-            document.add(tabla);
+            // --- 3. BUCLE DE DATOS REALES ---
+            for (Pedido venta : ventas) {
+                
+                table.addCell(String.valueOf(venta.getId())); // Columna 1: ID
+                
+                // Columna 2: Mesa y Mozo
+                String infoMesaMozo = String.format("Mesa N°: %d\nMozo: %s", 
+                                                    venta.getMesa().getNumero(), 
+                                                    venta.getUsuario().getNombre());
+                table.addCell(infoMesaMozo);
+                
+                // Columna 3: Items
+                StringBuilder itemsStr = new StringBuilder();
+                for (ItemPedido item : venta.getItems()) {
+                    itemsStr.append(String.format("%dx %s\n", 
+                                                  item.getCantidad(), 
+                                                  item.getProducto().getNombre()));
+                }
+                table.addCell(itemsStr.toString());
+                
+                // Columna 4: Total del Pedido
+                PdfPCell celdaTotal = new PdfPCell(new Phrase(String.format("$ %.2f", venta.getTotal())));
+                celdaTotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                table.addCell(celdaTotal);
+                
+                granTotal += venta.getTotal();
+            }
+            
+            document.add(table);
 
-            // --- FIN DEL CONTENIDO ---
+            // --- 4. FILA DE TOTAL GENERAL ---
+            Paragraph pTotal = new Paragraph(String.format("TOTAL VENDIDO: $ %.2f", granTotal), fontTotal);
+            pTotal.setAlignment(Element.ALIGN_RIGHT);
+            pTotal.setSpacingBefore(10); // Espacio antes del total
+            document.add(pTotal);
 
-            // 8. Cerrar el documento
-            document.close();
+            // --- 5. CIERRE ---
+            document.close(); // ¡Muy importante!
 
         } catch (DocumentException e) {
-            // Manejo básico de errores (en la vida real, loggear esto)
             e.printStackTrace();
+            // (Manejo de errores)
         }
-
-        // 9. Devolver los bytes del PDF
+        
         return baos.toByteArray();
+    }
+
+    /**
+     * Método de ayuda para crear celdas de encabezado bonitas.
+     */
+    private PdfPCell crearCeldaHeader(String texto, Font font) {
+        PdfPCell cell = new PdfPCell(new Phrase(texto, font));
+        cell.setBackgroundColor(Color.DARK_GRAY);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setPadding(5);
+        return cell;
     }
 }

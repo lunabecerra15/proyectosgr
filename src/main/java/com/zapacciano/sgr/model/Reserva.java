@@ -29,14 +29,10 @@ public class Reserva {
     @JoinColumn(name = "id_mesa")
     private Mesa mesa;
 
-    // --- ¡¡ESTE ES EL ARREGLO DEL 'AnnotationException'!! ---
-    // 'mappedBy = "reserva"' le dice a Hibernate:
-    // "No crees una columna 'pedido_id' aquí. Ve al campo 'reserva'
-    // en la clase 'Pedido' para encontrar la configuración de esta unión."
     @OneToOne(mappedBy = "reserva", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Pedido pedido;
 
-    // --- Constructores, Getters y Setters ---
+    //Constructores, Getters y Setters
 
     public Reserva() {
     }
