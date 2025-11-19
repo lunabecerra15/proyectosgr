@@ -1,9 +1,9 @@
 package com.zapacciano.sgr.model;
 
 import jakarta.persistence.*;
-import java.io.Serializable; // (Buena práctica para entidades compuestas)
+import java.io.Serializable; // entidades compuestas
 
-// (Esta anotación @IdClass es para la clave primaria compuesta que te pasé antes)
+// (Esta anotación @IdClass es para la clave primaria compuesta)
 @IdClass(ItemPedido.ItemPedidoId.class)
 @Entity
 @Table(name = "items_pedido")
@@ -15,7 +15,7 @@ public class ItemPedido {
     private Pedido pedido;
 
     @Id
-    @ManyToOne(fetch = FetchType.EAGER) // <-- ¡¡ESTE ES EL ARREGLO!!
+    @ManyToOne(fetch = FetchType.EAGER) 
     @JoinColumn(name = "producto_id")
     private Producto producto;
 
