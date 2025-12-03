@@ -10,7 +10,6 @@
 
 <body class="bg-light">
     
-    <!-- Barra de Navegación -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="#">Zapacciano (Admin)</a>
@@ -20,10 +19,8 @@
         </div>
     </nav>
 
-    <!-- Contenido de la Página -->
     <div class="container mt-4">
 
-        <!-- Fila 1: Título y Botón PDF -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="mb-0">Panel de Administración</h1>
             
@@ -33,16 +30,131 @@
                 </button>
             </form>
         </div>
+        
+        <div th:if="${exito}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> <strong th:text="${exito}"></strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> <strong th:text="${error}"></strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
 
         <p>Bienvenido al panel de control de Zapacciano.</p>
 
-        <!-- Fila 2 -->
         <div class="row mt-4">
 
-            
             <div class="col-md-8">
 
-                <!-- Reporte de Ventas -->
+                <div class="card shadow-sm mb-4 border-primary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-check"></i> 
+                                <span th:text="${tituloReservas}">Gestión de Reservas</span>
+                            </h5>
+                            
+                            <a th:if="${viendoHistorial == false}" th:href="@{/home(ver='historial')}" 
+                               class="btn btn-sm btn-outline-light" title="Ver reservas viejas">
+                                <i class="bi bi-clock-history"></i> Historial
+                            </a>
+                            <a th:if="${viendoHistorial == true}" th:href="@{/home}" 
+                               class="btn btn-sm btn-light text-primary fw-bold" title="Ver solo activas">
+                                <i class="bi bi-calendar-day"></i> Ver Activas
+                            </a>
+                        </div>
+                        <span class="badge bg-white text-primary" th:text="${reservas != null ? #lists.size(reservas) : 0} + ' Registradas'">0</span>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha/Hora</th>
+                                        <th>Cliente / Info Pago</th> <th>Mesa</th>
+                                        <th>Personas</th>
+                                        <th>Seña</th>
+                                        <th>Estado</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="r : ${reservas}">
+                                        
+                                        <td>
+                                            <div class="fw-bold" th:text="${#temporals.format(r.fechaHora, 'dd/MM/yyyy')}">12/12</div>
+                                            <small class="text-muted" th:text="${#temporals.format(r.fechaHora, 'HH:mm')} + ' hs'">20:00</small>
+                                        </td>
+
+                                        <td>
+                                            <span class="fw-bold" th:text="${r.cliente.nombre}">Juan</span>
+                                            <br>
+                                            
+                                            <div th:if="${r.estado?.name() == 'EN_REVISION'}">
+                                                <span class="badge bg-info text-dark border border-dark">
+                                                    <i class="bi bi-ticket-perforated"></i> 
+                                                    Ref: <span th:text="${r.codigoComprobante}">COD123</span>
+                                                </span>
+                                                <div style="font-size: 0.7rem;" class="text-muted mt-1">
+                                                    <i class="bi bi-telephone"></i> <span th:text="${r.cliente.telefono}"></span>
+                                                </div>
+                                            </div>
+
+                                            <div th:unless="${r.estado?.name() == 'EN_REVISION'}">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-telephone"></i> <span th:text="${r.cliente.telefono}"></span>
+                                                </small>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <span class="badge bg-light text-dark border" th:text="'Mesa ' + ${r.mesa.numero}">Mesa</span>
+                                        </td>
+
+                                        <td class="text-center" th:text="${r.cantidadPersonas}">0</td>
+
+                                        <td class="fw-bold text-success" th:text="'$' + ${#numbers.formatDecimal(r.montoSeña, 0, 'POINT', 0, 'COMMA')}">$0</td>
+
+                                        <td>
+                                            <span th:if="${r.estado?.name() == 'CONFIRMADA'}" class="badge bg-success">
+                                                <i class="bi bi-check-circle-fill"></i> PAGADO
+                                            </span>
+                                            <span th:if="${r.estado?.name() == 'PENDIENTE'}" class="badge bg-warning text-dark">
+                                                <i class="bi bi-hourglass-split"></i> PENDIENTE
+                                            </span>
+                                            <span th:if="${r.estado?.name() == 'EN_REVISION'}" class="badge bg-warning text-dark border border-dark">
+                                                <i class="bi bi-search"></i> REVISAR
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <div th:if="${r.estado?.name() == 'EN_REVISION'}">
+                                                <form th:action="@{/admin/reservas/aprobar/{id}(id=${r.id})}" method="post">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success fw-bold" 
+                                                            title="Confirmar que llegó el dinero"
+                                                            onclick="return confirm('¿El código coincide con el banco? ¿Aprobar reserva?');">
+                                                        <i class="bi bi-check-lg"></i> Aprobar
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                            <button th:if="${r.estado?.name() == 'CONFIRMADA'}" class="btn btn-sm btn-light disabled border">
+                                                <i class="bi bi-check2"></i> Listo
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    <tr th:if="${reservas == null or #lists.isEmpty(reservas)}">
+                                        <td colspan="7" class="text-center py-3 text-muted">
+                                            No hay reservas para mostrar.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
                 <div class="card shadow-sm">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Reporte de Ventas (Pedidos Completados)</h5>
@@ -50,21 +162,19 @@
 
                     <div class="card-body">
 
-                        <!-- Si NO hay ventas -->
-                        <div th:if="${ventas.isEmpty()}" class="alert alert-info">
+                        <div th:if="${ventas == null or ventas.isEmpty()}" class="alert alert-info">
                             No hay ventas completadas para mostrar.
                         </div>
 
-                        <!-- Tabla -->
-                        <div class="table-responsive" th:if="${!ventas.isEmpty()}">
+                        <div class="table-responsive" th:if="${ventas != null and !ventas.isEmpty()}">
                             <table class="table table-striped table-hover align-middle">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>ID Pedido</th>
-                                        <th>Fecha y Hora</th>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
                                         <th>Mesa</th>
                                         <th>Mozo</th>
-                                        <th>Items Vendidos</th>
+                                        <th>Items</th>
                                         <th>Total</th>
                                     </tr>
                                 </thead>
@@ -74,18 +184,12 @@
                                         <td th:text="${#temporals.format(venta.fecha, 'dd/MM/yyyy HH:mm')}">
                                             01/01/2025 21:30
                                         </td>
-                                        <td th:text="'Mesa N° ' + ${venta.mesa.numero}">
-                                            Mesa N° 5
-                                        </td>
-                                        <td th:text="${venta.usuario.nombre}">
-                                            Mozo
-                                        </td>
+                                        <td th:text="'Mesa ' + ${venta.mesa.numero}">Mesa 5</td>
+                                        <td th:text="${venta.usuario.nombre}">Mozo</td>
                                         <td>
                                             <ul class="list-unstyled mb-0 small">
                                                 <li th:each="item : ${venta.items}">
-                                                    <span th:text="${item.cantidad} + 'x ' + ${item.producto.nombre}">
-                                                        2x Pizza
-                                                    </span>
+                                                    <span th:text="${item.cantidad} + 'x ' + ${item.producto.nombre}">2x Pizza</span>
                                                 </li>
                                             </ul>
                                         </td>
@@ -103,7 +207,6 @@
 
             <div class="col-md-4">
 
-                <!-- Resumen del Día -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Resumen del Día</h5>
@@ -112,7 +215,7 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Ventas Completadas
-                            <span class="badge bg-primary rounded-pill" th:text="${#lists.size(ventas)}">0</span>
+                            <span class="badge bg-primary rounded-pill" th:text="${ventas != null ? #lists.size(ventas) : 0}">0</span>
                         </li>
 
                         <li class="list-group-item d-flex justify-content-between align-items-center fs-5 fw-bold">
@@ -125,7 +228,6 @@
                     </ul>
                 </div>
 
-                <!-- Acciones Rápidas -->
                 <div class="card shadow-sm">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Acciones Rápidas</h5>
@@ -142,12 +244,7 @@
                     </div>
                 </div>
 
-            </div>
-        </div> <!-- Fin row -->
-
-    </div> <!-- Fin container -->
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+            </div> </div> </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

@@ -26,7 +26,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
+//import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -58,17 +58,33 @@ public class WebController {
 
     // --- DASHBOARD ADMIN ---
     @GetMapping("/home")
-    public String mostrarPaginaDeHome(Model model) {
+    public String mostrarPaginaDeHome(
+            Model model, 
+            @RequestParam(value = "ver", required = false) String ver // Nuevo parámetro
+    ) {
 
-        model.addAttribute("pedidosActivos", Collections.emptyList());
-
+        // --- Lógica de Ventas (Igual que siempre) ---
         List<Pedido> ventasCompletadas = pedidoService.getReporteVentas();
-        double totalVendido = ventasCompletadas.stream()
-                .mapToDouble(Pedido::getTotal)
-                .sum();
-
+        double totalVendido = ventasCompletadas.stream().mapToDouble(Pedido::getTotal).sum();
         model.addAttribute("ventas", ventasCompletadas);
         model.addAttribute("totalVendido", totalVendido);
+
+        // --- Lógica de Reservas INTELIGENTE ---
+        List<Reserva> reservas;
+        
+        if ("historial".equals(ver)) {
+            // Si el admin pide ver todo el historial
+            reservas = reservaService.obtenerHistorialCompleto();
+            model.addAttribute("tituloReservas", "Historial Completo de Reservas");
+            model.addAttribute("viendoHistorial", true); // Para cambiar el botón en el HTML
+        } else {
+            // Por defecto: Solo las activas (Hoy y Futuro)
+            reservas = reservaService.obtenerReservasActivas();
+            model.addAttribute("tituloReservas", "Reservas Activas (Hoy y Futuras)");
+            model.addAttribute("viendoHistorial", false);
+        }
+
+        model.addAttribute("reservas", reservas);
 
         return "home";
     }
@@ -76,16 +92,16 @@ public class WebController {
     @GetMapping("/home/reporte/pdf")
     public ResponseEntity<byte[]> descargarReporteVentas() {
 
-        // 1. Buscamos las ventas (Gracias al cambio en el Service, solo trae las nuevas)
+        // Buscamos las ventas (solo trae las nuevas)
         List<Pedido> ventas = pedidoService.getReporteVentas();
 
-        // 2. Generamos el PDF con esos datos
+        // Generamos el PDF con esos datos
         byte[] pdfBytes = pdfService.generarReporteVentas(ventas);
 
         // Le decimos a la base de datos: "Estas ventas ya las imprimí, archívalas".
         pedidoService.marcarVentasComoReportadas(ventas);
 
-        // 4. Preparamos la descarga del archivo
+        // Preparamos la descarga del archivo
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         
@@ -96,7 +112,7 @@ public class WebController {
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
-    // --- VISTAS MOZO ---
+    //VISTAS MOZO
     @GetMapping("/pedidos")
     public String mostrarPaginaDePedidos(
             Model model,
@@ -183,7 +199,7 @@ public class WebController {
         return "redirect:/pedidos";
     }
 
-    // --- RESERVAS CLIENTE ---
+    // RESERVAS CLIENTE
     @GetMapping("/reservas")
     public String mostrarPaginaDeReservas(Model model,
                                           @RequestParam(value = "error", required = false) String error) {
@@ -224,6 +240,25 @@ public class WebController {
             return "pagar_seña";
         } catch (Exception e) {
             return "redirect:/reservas?error=no_encontrado";
+        }
+    }
+
+    // --- MÉTODOS DE PAGO (CLIENTE) ---
+
+    // 1. Procesar el formulario de Transferencia
+    @PostMapping("/reservas/pagar/transferencia")
+    public String procesarPagoTransferencia(
+            @RequestParam("reservaId") Long reservaId,
+            @RequestParam("codigo") String codigo,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            reservaService.registrarPagoTransferencia(reservaId, codigo);
+            // Redirigimos a una página de "Espera confirmación" o la misma de éxito con otro mensaje
+            return "redirect:/reservas/exito/" + reservaId + "?tipo=transferencia";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "redirect:/reservas/pagar/" + reservaId + "?error=Error al registrar transferencia";
         }
     }
 
@@ -269,7 +304,7 @@ public class WebController {
         return "reserva_exitosa";
     }
 
-    // --- MENÚ PÚBLICO ---
+    // MENÚ PÚBLICO
     @GetMapping("/menu")
     public String mostrarMenuPublico(Model model) {
         List<Producto> todosLosProductos = productoRepository.findAll();
@@ -279,30 +314,57 @@ public class WebController {
         return "menu";
     }
 
-
+    // Todo ADMISS
     @GetMapping("/admin/productos")
     public String mostrarGestionProductos(
             Model model,
             @RequestParam(value="exito", required = false) String exito
     ) {
-        // 1. Buscamos todos los productos
+        // Buscamos todos los productos
         List<Producto> productos = productoRepository.findAll();
-        
-        // 2. Los pasamos al HTML
         model.addAttribute("productos", productos);
-        
-        // 3. (Opcional) Pasamos el mensaje de éxito si venimos de un update
+        // Verificar si existe el parámetro 'exito' para evitar NullPointerException
         if (exito != null) {
-            model.addAttribute("exito", "¡Precio actualizado correctamente!");
+            if (exito.equals("true")) {
+                model.addAttribute("exito", "Precio actualizado correctamente");
+            } else {
+                // Si viene otro texto (ej: "Producto añadido correctamente"), lo usamos tal cual
+                model.addAttribute("exito", exito);
+            }
+        }
+        // Mostramos la nueva página
+        return "admin-productos"; 
+    }
+
+    // Formulario para crear un nuevo producto
+    @PostMapping("/admin/productos/crear")
+    public String crearNuevoProducto(
+            @RequestParam("nombre") String nombre,
+            @RequestParam("descripcion") String descripcion,
+            @RequestParam("precio") double precio,
+            @RequestParam("stock") int stock,
+            @RequestParam("categoria") String categoria,
+            @RequestParam("imagenUrl") String imagenUrl,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            // Creamos el objeto con los datos del formulario
+            Producto nuevo = new Producto(nombre, descripcion, precio, stock, categoria);
+            nuevo.setImagenUrl(imagenUrl); // Seteamos la imagen
+
+            // Guardamos el nuevo producto usando el servicio
+            productoService.crearProducto(nuevo);
+
+            redirectAttributes.addAttribute("exito", "¡Producto creado exitosamente!");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         
-        // 4. Mostramos la nueva página
-        return "admin-productos"; // Muestra /templates/admin-productos.html
+        // Redirigimos a la lista para ver el nuevo producto
+        return "redirect:/admin/productos";
     }
     
-    /**
-     * Recibe el formulario de actualización de precio de un producto.
-     */
+     // Recibe el formulario de actualización de precio de un producto.
     @PostMapping("/admin/productos/editar")
     public String actualizarPrecioProducto(
             @RequestParam("productoId") Long productoId,
@@ -310,17 +372,28 @@ public class WebController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            // 1. Llamamos al nuevo servicio para que haga el trabajo
+            // Guardamos el nuevo precio
             productoService.actualizarPrecioProducto(productoId, nuevoPrecio);
             
-            // 2. Redirigimos de vuelta con un mensaje de éxito
+            // Redirigimos de vuelta con un mensaje de éxito
             redirectAttributes.addAttribute("exito", "true");
             
         } catch (Exception e) {
             e.printStackTrace();
-            // (Si quisiéramos, podríamos agregar un mensaje de error aquí)
         }
         
         return "redirect:/admin/productos";
+    }
+
+
+    @PostMapping("/admin/reservas/aprobar/{id}")
+    public String aprobarReservaAdmin(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        try {
+            reservaService.aprobarReserva(id);
+            redirectAttributes.addAttribute("exito", "Reserva #" + id + " aprobada correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addAttribute("error", "Error al aprobar.");
+        }
+        return "redirect:/home";
     }
 }

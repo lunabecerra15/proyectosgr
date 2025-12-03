@@ -32,6 +32,8 @@ public class Reserva {
     @OneToOne(mappedBy = "reserva", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Pedido pedido;
 
+    private String codigoComprobante;
+
     //Constructores, Getters y Setters
 
     public Reserva() {
@@ -100,4 +102,13 @@ public class Reserva {
     public void setPedido(Pedido pedido) {
         this.pedido = pedido;
     }
+
+    public String getCodigoComprobante() {
+        return codigoComprobante;
+    }
+
+    public void setCodigoComprobante(String codigoComprobante) {
+        this.codigoComprobante = codigoComprobante;
+    }
+
 }

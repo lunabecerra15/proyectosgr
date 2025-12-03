@@ -14,23 +14,33 @@ public class ProductoService {
 
     /**
      * Busca un producto por su ID, actualiza el precio y lo guarda.
-     * @param productoId El ID del producto a actualizar.
-     * @param nuevoPrecio El nuevo precio a establecer.
-     * @throws RuntimeException Si el producto no se encuentra.
      */
     @Transactional
     public void actualizarPrecioProducto(Long productoId, double nuevoPrecio) {
-        
-        // 1. Buscamos el producto en la base de datos
+        // Buscamos el producto en la base de datos
         Producto producto = productoRepository.findById(productoId)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + productoId));
             
-        // 2. Actualizamos el precio
+        // Cambiamos precio
         producto.setPrecio(nuevoPrecio);
         
-        // 3. Guardamos los cambios
-        // (Como estamos en una @Transactional, esto a veces no es 100% necesario,
-        // pero hacerlo explícito es una buena práctica).
+        // Guardamos producto
         productoRepository.save(producto);
     }
+
+    /**
+     * Guarda un nuevo producto en la base de datos.
+     * Verifica si trae imagen, si no, le pone una por defecto.
+     */
+    @Transactional
+    public void crearProducto(Producto producto) {
+        // Validación: Si la imagen es nula o texto vacío, ponemos placeholder
+        if (producto.getImagenUrl() == null || producto.getImagenUrl().trim().isEmpty()) {
+            producto.setImagenUrl("https://placehold.co/600x400?text=Sin+Imagen"); 
+        }
+        
+        // Guardamos el nuevo producto
+        productoRepository.save(producto);
+    }
+
 }

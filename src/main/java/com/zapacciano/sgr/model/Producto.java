@@ -14,29 +14,26 @@ public class Producto {
     private String descripcion;
     private double precio;
     private int stock;
-
-    // --- ¡¡CAMBIO AQUÍ!! ---
-    // Agregamos el nuevo campo para agrupar el menú
     private String categoria;
-    // --- FIN DEL CAMBIO ---
 
-    // Constructor vacío para JPA
+    @Column(length = 2000) 
+    private String imagenUrl;
+   
+    //Constructor vacío para JPA
     public Producto() {
     }
 
-    // --- ¡¡CAMBIO AQUÍ!! ---
-    // Actualizamos el constructor para que también incluya la categoría
+    
     public Producto(String nombre, String descripcion, double precio, int stock, String categoria) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
         this.stock = stock;
-        this.categoria = categoria; // Asignamos la categoría
+        this.categoria = categoria; 
     }
-    // --- FIN DEL CAMBIO ---
+    
 
-    // --- Getters y Setters ---
-    // (Asegúrate de agregar el getter y setter para 'categoria')
+    //Getters y Setters
 
     public Long getId() {
         return id;
@@ -78,8 +75,6 @@ public class Producto {
         this.stock = stock;
     }
 
-    // --- ¡¡CAMBIO AQUÍ!! ---
-    // Nuevo Getter y Setter
     public String getCategoria() {
         return categoria;
     }
@@ -87,5 +82,13 @@ public class Producto {
     public void setCategoria(String categoria) {
         this.categoria = categoria;
     }
-    // --- FIN DEL CAMBIO ---
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
+    }
+   
 }

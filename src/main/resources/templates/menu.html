@@ -5,66 +5,70 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <!-- 1. Importamos las mismas fuentes que el index -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 
-    <!-- 2. Agregamos los estilos de la estética "bordó" -->
     <style>
         body {
             background-color: #800000 !important; /* Fondo Bordó */
-            color: white; /* Texto blanco por defecto */
-            font-family: 'Inter', sans-serif; /* Fuente 'Inter' para todo */
+            color: white; 
+            font-family: 'Inter', sans-serif;
         }
 
-        /* 3. Títulos (Menú y Categorías) usarán la fuente elegante */
         h1, h2 {
             font-family: 'Playfair Display', serif;
             font-weight: 700;
         }
         
-        /* 4. Título principal 'Nuestro Menú' */
-        .display-4 {
-             color: white;
-        }
+        .display-4 { color: white; }
         
-        /* 5. Subtítulo (párrafo 'lead') */
-        .lead {
-            color: rgba(255, 255, 255, 0.7); /* Blanco más sutil */
-        }
+        .lead { color: rgba(255, 255, 255, 0.8); }
         
-        /* 6. ¡LA PARTE CLAVE! Las tarjetas de los productos */
+        /* TARJETAS DEL MENÚ */
         .card {
-            background-color: transparent !important; /* Hacemos la tarjeta transparente */
-            border: 1px solid rgba(255, 255, 255, 0.25); /* Borde blanco sutil */
-            color: white; /* Texto de la tarjeta en blanco */
+            background-color: transparent !important; 
+            border: 1px solid rgba(255, 255, 255, 0.3); 
+            color: white;
+            overflow: hidden; /* Para que la imagen respete los bordes redondeados */
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Efecto al pasar el mouse (opcional, queda lindo) */
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.8);
         }
         
-        /* 7. El nombre del producto (h5) lo ponemos en 'Inter' negrita */
         .card-title {
             font-weight: 700; 
-            color: white !important; /* Forzamos color blanco */
+            color: white !important;
         }
         
-        /* 8. La descripción del producto */
         .card-text {
-            color: rgba(255, 255, 255, 0.7) !important; /* Blanco sutil */
+            color: rgba(255, 255, 255, 0.8) !important; 
         }
         
-        /* 9. El precio (badge) ya era 'bg-dark', lo cual se ve genial */
         .badge.bg-dark {
-            /* Hacemos la letra un poco más grande y nítida */
             font-size: 1rem; 
             font-weight: 700;
+            background-color: #000000 !important; /* Negro puro para resaltar */
+            border: 1px solid white;
+        }
+
+        /* ESTILO PARA LA IMAGEN */
+        .card-img-top {
+            height: 200px; /* Altura fija para que todas se vean iguales */
+            width: 100%;
+            object-fit: cover; /* Recorta la imagen para llenar el espacio sin deformar */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
     </style>
 </head>
-<!-- CAMBIO 1: Quitamos 'bg-light' del body -->
+
 <body>
 
-    <!-- CAMBIO 2: 'bg-dark' a 'bg-black' para la barra de navegación -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-black">
         <div class="container">
             <a class="navbar-brand" href="/">Zapacciano</a>
@@ -76,45 +80,44 @@
         </div>
     </nav>
 
-    <!-- Contenido del Menú -->
     <div class="container mt-5 mb-5">
         
         <div class="text-center mb-5">
-            <!-- CAMBIO 3: El H1 y P ya heredan el estilo del <style> -->
             <h1 class="display-4">Nuestro Menú</h1>
             <p class="lead">Platos y bebidas preparados con los mejores ingredientes.</p>
         </div>
 
         <div th:each="categoriaEntry : ${menuAgrupado}">
             
-            <!-- CAMBIO 4: Cambiamos las clases del título de categoría -->
-            <h2 class="h3 border-bottom border-light border-opacity-50 pb-2 mb-4" 
+            <h2 class="h3 border-bottom border-light border-opacity-50 pb-2 mb-4 mt-5" 
                 th:text="${categoriaEntry.key}">
-                <!-- Ej: "Pizzas" -->
+                Categoría
             </h2>
 
-            <div class="row g-4 mb-5">
-                <div th:each="producto : ${categoriaEntry.value}" class="col-md-6">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <div th:each="producto : ${categoriaEntry.value}" class="col">
                     
-                    <!-- CAMBIO 5: Quitamos clases viejas de la tarjeta -->
-                    <div class="card h-100">
-                        <div class="card-body">
+                    <div class="card h-100 shadow-sm">
+                        
+                        <img th:src="${producto.imagenUrl != null && !#strings.isEmpty(producto.imagenUrl) ? producto.imagenUrl : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=60'}" 
+                             class="card-img-top" 
+                             alt="Foto del plato">
+                        
+                        <div class="card-body d-flex flex-column">
                             
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <!-- CAMBIO 6: Quitamos 'text-dark' del h5 -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h5 class="card-title mb-0" th:text="${producto.nombre}">
-                                    <!-- Ej: Pizza Mozzarella -->
+                                    Pizza Mozzarella
                                 </h5>
                                 
                                 <span class="badge bg-dark" 
                                       th:text="'$' + ${#numbers.formatDecimal(producto.precio, 0, 'POINT', 0, 'COMMA')}">
-                                    <!-- Ej: $14,000 -->
+                                    $14,000
                                 </span>
                             </div>
                             
-                            <!-- CAMBIO 7: Quitamos 'text-muted' del p -->
-                            <p class="card-text" th:text="${producto.descripcion}">
-                                <!-- Ej: Salsa de tomate, mozzarella y orégano. -->
+                            <p class="card-text flex-grow-1" th:text="${producto.descripcion}">
+                                Descripción del plato.
                             </p>
 
                         </div>
@@ -122,9 +125,7 @@
 
                 </div>
             </div>
-        </div> <!-- Fin del loop de categorías -->
-
-    </div> <!-- Fin del .container -->
+        </div> </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

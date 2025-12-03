@@ -13,6 +13,9 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort; 
+import java.util.List;
+import java.time.LocalDate;
 
 
 import java.time.LocalDateTime;
@@ -28,6 +31,7 @@ public class ReservaService {
     private MesaRepository mesaRepository;
     
     private static final double MONTO_SEÑA_POR_PERSONA = 10000.00;
+
    
 
     // Horarios
@@ -108,4 +112,88 @@ public class ReservaService {
         return reservaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + id));
     }
+
+    @Transactional(readOnly = true)
+    public List<Reserva> obtenerTodasLasReservas() {
+        // Trae todas las reservas ordenadas: la más nueva arriba
+        return reservaRepository.findAll(Sort.by(Sort.Direction.DESC, "fechaHora"));
+
+
+    }
+
+
+    @Transactional
+    public void registrarPagoTransferencia(Long reservaId, String codigo) {
+        Reserva reserva = findById(reservaId);
+        
+        if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
+            throw new RuntimeException("La reserva no está pendiente de pago.");
+        }
+
+        reserva.setCodigoComprobante(codigo);
+        reserva.setEstado(EstadoReserva.EN_REVISION);
+        
+        reservaRepository.save(reserva);
+    }
+
+    /**
+     * El Admin aprueba la transferencia manualmente.
+     * La reserva pasa a CONFIRMADA y se bloquea la mesa.
+     */
+    @Transactional
+    public void aprobarReserva(Long reservaId) {
+        Reserva reserva = findById(reservaId);
+        
+        // Solo aprobamos si está en revisión
+        if (reserva.getEstado() == EstadoReserva.EN_REVISION) {
+            
+            reserva.setEstado(EstadoReserva.CONFIRMADA);
+            
+            // Ocupamos la mesa (igual que con tarjeta)
+            Mesa mesa = reserva.getMesa();
+            if (mesa != null && mesa.getEstado() == EstadoMesa.LIBRE) {
+                mesa.setEstado(EstadoMesa.RESERVADO);
+                mesaRepository.save(mesa);
+            }
+            
+            reservaRepository.save(reserva);
+        }
+    }
+
+    /**
+     * Trae las reservas desde HOY a las 00:00 en adelante.
+     * Ordenadas por fecha ascendente (lo que va a pasar más pronto, primero).
+     */
+    /**
+     * Trae las reservas desde HOY en adelante.
+     * FILTRO: Solo muestra las CONFIRMADA o EN_REVISION.
+     * (Oculta las PENDIENTE, CANCELADA, etc.)
+     */
+    @Transactional(readOnly = true)
+    public List<Reserva> obtenerReservasActivas() {
+        LocalDateTime inicioHoy = LocalDate.now().atStartOfDay();
+        
+        // Definimos qué estados queremos ver en la pantalla principal
+        List<EstadoReserva> estadosVisibles = List.of(
+            EstadoReserva.CONFIRMADA, 
+            EstadoReserva.EN_REVISION
+        );
+        
+        return reservaRepository.findByFechaHoraAfterAndEstadoIn(
+            inicioHoy, 
+            estadosVisibles, 
+            Sort.by(Sort.Direction.ASC, "fechaHora")
+        );
+    }
+
+
+    /**
+     * Trae TODAS las reservas históricas (incluso las viejas).
+     */
+    @Transactional(readOnly = true)
+    public List<Reserva> obtenerHistorialCompleto() {
+        // Ordenadas: las más nuevas primero
+        return reservaRepository.findAll(Sort.by(Sort.Direction.DESC, "fechaHora"));
+    }
+
 }
